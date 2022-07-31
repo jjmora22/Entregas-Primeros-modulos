@@ -7,8 +7,38 @@ margin = {
     left: 60,
     right: 10
     }
+data2 = {}
+dataorigin = {}
+years = {}
+data_count = {}
+chgyear = 2018
 
-// ---> defino svg y grupos:
+function ReceiveValue(chgyear) {
+    console.log(chgyear)
+    if (chgyear > d3.max(data2.map(d => d.year))) {
+        data2 = dataorigin
+        data2 = data2.filter(FilterExistWin)
+    }
+    else {
+        data2 = data2
+}
+}
+
+// ---> Cuento los campeonatos por cada copa de cada selección
+function CountYears() {
+    data_count = d3.nest()
+    .key(function(d) {
+        return d.winner;
+    })
+    .rollup(function(wins) {
+        return wins.length;
+    })
+    .entries(data2);
+    return(data_count)
+}
+
+
+    // ---> defino svg y grupos:
 svg = d3.select("#chart")
     .append("svg")
         .attr("width", width)
@@ -16,7 +46,7 @@ svg = d3.select("#chart")
 
 elementGroup = svg.append("g").attr("id", "elementGroup")
     .attr("transform", `translate(${margin.left})`)
-const axisGroup = svg.append("g").attr("id", "axisGroup")
+axisGroup = svg.append("g").attr("id", "axisGroup")
 const xAxisGroup = axisGroup.append("g").attr("id", "xAxisGroup")
     .attr("transform", `translate(${margin.left}, ${height - margin.top - margin.bottom})`)
 const yAxisGroup = axisGroup.append("g").attr("id", "yAxisGroup")
@@ -39,23 +69,18 @@ d3.csv("data.csv").then(data => {
     console.log(data)
 
     data.map(d => {
-    //    d.year = +d.year // Transformo los años a datos contínuos (lo requiero para el slider)
+        d.year = +d.year // Transformo los años a datos contínuos (lo requiero para el slider)
     })
 
-
     data2 = data
-/*
-    function FilterSelectedYear (val) {
-        if ((data2.year) > val) {
-            return true
-        }
-        else
-            return false;
-    }
+    dataorigin = data
+    years = data.map(d => d.year)
+    slider()
+    
+   // slider(years)
 
-    data2 = data2.filter(FilterSelectedYear) // <----- Este es el filtro del año según el slider
-*/
-    function FilterExistWin (val) {
+   
+function FilterExistWin (data2) {
         if ((data2.winner) !== "") {
             return true
         }
@@ -63,19 +88,21 @@ d3.csv("data.csv").then(data => {
             return false;
     }
 
+data2 = data2.filter(FilterExistWin) // Borrar si no hubo mundial
 
 
-    data2 = data2.filter(FilterExistWin) // <--- Este es el primer filtro de la base, donde quito los años que no hubo ganador
 
-// ---> Cuento los campeonatos por cada copa de cada selección
-var data_count = d3.nest()
-    .key(function(d) {
-        return d.winner;
-    })
-    .rollup(function(wins) {
-        return wins.length;
-    })
-    .entries(data2);
+function FilterYearAbove (data2) {
+        if ((data2.year) <= chgyear) {
+            return true
+        }
+        else
+            return false;
+    }
+
+data2 = data2.filter(FilterYearAbove) // <--- Borrar años superiores
+
+CountYears(data_count)
 
 console.log(data_count)
 
@@ -92,43 +119,48 @@ elementGroup.selectAll("rect").data(data_count)
     .join("rect")
         .attr ("class", d => d.key)
         .attr("x",0)
-        .attr("y", (d) => y(d.key))
-        .attr("width", (d => d.value * 800 / d3.max(data_count.map(datum => datum.value))))
+        .attr("y", (d, i) => y(d.key))
         .attr("height", y.bandwidth())
-        .attr("fill", function (d) {return (d.value == d3.max(data_count.map(datum => datum.value)) ? "blue" : "darkgrey")})
+        .transition()
+        .duration(300)
+        .attr("width", (d => d.value * 146))
+        .attr("fill", function (d) {return (d.value == d3.max(data_count.map(datum => datum.value)) ? "red" : "darkgrey")})
 
 // ---> coloco el número de copas que ha ganado cada selección al pasar el mouse sobre la tabla
 elementGroup.selectAll("text").data(data_count)
     .join("text")
         .attr ("class", "tooltiptext")
-        .text(d => d.value)
-        .attr("x",d => (d.value * 800 / d3.max(data_count.map(datum => datum.value))) - 22)
-        .attr("y", (d) => y(d.key) + y.bandwidth()/2 + 4)
+        .attr("x",d => d.value * 146 - 22)
+        .attr("y", (d, i) => y(d.key) + y.bandwidth()/2 + 4)
         .attr("height", y.bandwidth())
         .attr("text-anchor", "middle")
         .attr("style:fill", "white")
         .attr("style:font-size", "10px")
+        .transition()
+        .duration(450) // <--- Quiero darle un pequeño retraso 
+        .text(d => d.value)
 })
 
 
 
 // CHART END
 
+
 // slider:
 function slider() {    
     var sliderTime = d3
         .sliderBottom()
-        .min(d3.min(data2.map(datum => datum.year)))  // rango años
-        .max(d3.max(data2.map(datum => datum.year)))
+        .min(years)  // rango años
+        .max(years)
         .step(4)  // cada cuánto aumenta el slider
         .width(580)  // ancho de nuestro slider
-        .ticks(d3.set(data2.map(datum => datum.year).size()))  
-        .default([d3.max(data2.map(datum => datum.year)) - 1])  // punto inicio de la marca
+        .ticks(years.length)  
+        .default(years[years.length - 1])  // punto inicio de la marca
         .on('onchange', val => { sliderTime.value()
             console.log("La función aún no está conectada con la gráfica")
             // conectar con la gráfica aquí
-            FilterSelectedYear(val);
-        });
+        ReceiveValue(val)
+    });
 
         var gTime = d3
         .select('div#slider-time')  // div donde lo insertamos
@@ -142,4 +174,3 @@ function slider() {
 
         d3.select('p#value-time').text(sliderTime.value());
     } 
-    
