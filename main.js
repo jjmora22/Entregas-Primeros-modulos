@@ -7,15 +7,13 @@ margin = {
     left: 60,
     right: 10
     }
-data2 = {}
-dataorigin = {}
-years = {}
+
 data_count = {}
 chgyear = 2018
 
-function ReceiveValue(chgyear) {
-    console.log(chgyear)
-    if (chgyear > d3.max(data2.map(d => d.year))) {
+function ReceiveValue(value) {
+    console.log(value)
+    if (value > d3.max(data2.map(d => +d.year))) {
         data2 = dataorigin
         data2 = data2.filter(FilterExistWin)
     }
@@ -74,8 +72,9 @@ d3.csv("data.csv").then(data => {
 
     data2 = data
     dataorigin = data
-    years = data.map(d => d.year)
-    slider()
+    years = data.map(d => +d.year)
+    console.log(years)
+    slider(years)
     
    // slider(years)
 
@@ -147,19 +146,20 @@ elementGroup.selectAll("text").data(data_count)
 
 
 // slider:
-function slider() {    
+function slider(years) {    
     var sliderTime = d3
         .sliderBottom()
-        .min(years)  // rango años
-        .max(years)
+        .min(1930)  // rango años
+        .max(2018)
         .step(4)  // cada cuánto aumenta el slider
         .width(580)  // ancho de nuestro slider
         .ticks(years.length)  
         .default(years[years.length - 1])  // punto inicio de la marca
-        .on('onchange', val => { sliderTime.value()
+        .on('onchange', Year_High => { sliderTime.value()
             console.log("La función aún no está conectada con la gráfica")
             // conectar con la gráfica aquí
-        ReceiveValue(val)
+            console.log(Year_High)
+            ReceiveValue(Year_High)
     });
 
         var gTime = d3
