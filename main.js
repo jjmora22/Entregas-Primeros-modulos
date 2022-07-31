@@ -44,7 +44,7 @@ d3.csv("data.csv").then(data => {
 
 
     data2 = data
-
+/*
     function FilterSelectedYear (val) {
         if ((data2.year) > val) {
             return true
@@ -54,7 +54,7 @@ d3.csv("data.csv").then(data => {
     }
 
     data2 = data2.filter(FilterSelectedYear) // <----- Este es el filtro del año según el slider
-
+*/
     function FilterExistWin (val) {
         if ((data2.winner) !== "") {
             return true
@@ -124,7 +124,7 @@ function slider() {
         .width(580)  // ancho de nuestro slider
         .ticks(d3.set(data2.map(datum => datum.year).size()))  
         .default([d3.max(data2.map(datum => datum.year)) - 1])  // punto inicio de la marca
-        .on('onchange', val => { 
+        .on('onchange', val => { sliderTime.value()
             console.log("La función aún no está conectada con la gráfica")
             // conectar con la gráfica aquí
             FilterSelectedYear(val);
